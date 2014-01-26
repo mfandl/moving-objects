@@ -1,0 +1,6 @@
+compare
+*.layout
+Makefile
+*.cmake
+CMakeCache.txt
+CMakeFiles/
