@@ -98,7 +98,3 @@ std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr > Comparator::extractCluster
 
     return clusters;
 }
-
-
-
-
