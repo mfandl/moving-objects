@@ -1,6 +1,7 @@
-compare
+project
 *.layout
 Makefile
 *.cmake
 CMakeCache.txt
 CMakeFiles/
+*.cbp

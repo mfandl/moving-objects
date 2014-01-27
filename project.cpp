@@ -4,7 +4,7 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
-#include "comparator.hpp"
+#include "moving_objects_identificator.hpp"
 
 using namespace std;
 
@@ -12,11 +12,12 @@ pcl::visualization::PCLVisualizer viewer ("Result");
 pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud1 (new pcl::PointCloud<pcl::PointXYZRGBA>);
 pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZRGBA>);
 
-Comparator comparator(0.1f);
+MovingObjectsIdentificator moi(0.1f);
 
 int main(int argc, char* argv[]) {
 
     if(argc < 3) {
+        PCL_ERROR("run as ./project /path/to/cloud1/ /path/to/cloud2/ [pcd format]");
         return -1;
     }
 
@@ -27,21 +28,21 @@ int main(int argc, char* argv[]) {
     cout << "arg2 - " << fCloud2 << endl;
 
     if(pcl::io::loadPCDFile<pcl::PointXYZRGBA>(fCloud1, *cloud1) == -1) {
-        PCL_ERROR("File reading failed\n");
+        PCL_ERROR("Cloud1 reading failed\n");
         return(-1);
     }
 
     if(pcl::io::loadPCDFile<pcl::PointXYZRGBA>(fCloud2, *cloud2) == -1) {
-        PCL_ERROR("File reading failed\n");
+        PCL_ERROR("Cloud2 reading failed\n");
         return(-1);
     }
 
-    comparator.setCloud1(cloud1);
-    comparator.setCloud2(cloud2);
+    moi.setInputCloud1(cloud1);
+    moi.setInputCloud2(cloud2);
 
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr moved = comparator.findMovedPoints();
-    moved = comparator.removeOutliers(moved);
-    std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> clusters = comparator.extractClusters(moved);
+    moi.findDifference();
+    moi.removeOutliers();
+    std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> clusters = moi.extractClusters();
     cout << "clusters: " << clusters.size() << endl;
 
 
