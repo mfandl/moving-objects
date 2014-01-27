@@ -2,13 +2,13 @@
 #include <sstream>
 #include <string>
 #include <pcl/io/pcd_io.h>
-#include <pcl/visualization/cloud_viewer.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 #include "comparator.hpp"
 
 using namespace std;
 
-pcl::visualization::CloudViewer viewer ("FRAME 1");
+pcl::visualization::PCLVisualizer viewer ("Result");
 pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud1 (new pcl::PointCloud<pcl::PointXYZRGBA>);
 pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZRGBA>);
 
@@ -43,8 +43,27 @@ int main(int argc, char* argv[]) {
     moved = comparator.removeOutliers(moved);
     std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr> clusters = comparator.extractClusters(moved);
     cout << "clusters: " << clusters.size() << endl;
-    viewer.showCloud(moved);
-    while(!viewer.wasStopped());
+
+
+    viewer.setBackgroundColor(0, 0, 0);
+    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGBA> cloudColor(cloud2);
+    viewer.addPointCloud<pcl::PointXYZRGBA> (cloud2, cloudColor, "current frame");
+
+
+    int clusterNum = 0;
+    for(std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr>::iterator it = clusters.begin(); it != clusters.end(); it++) {
+        pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZRGBA> randomColor (*it);
+        viewer.addPointCloud<pcl::PointXYZRGBA> (*it, randomColor, "cluster" + clusterNum);
+        clusterNum++;
+    }
+
+
+    viewer.initCameraParameters();
+
+    while(!viewer.wasStopped()) {
+        viewer.spinOnce(100);
+        boost::this_thread::sleep (boost::posix_time::milliseconds(100));
+    }
 
     return 0;
 }
