@@ -12,7 +12,7 @@ pcl::visualization::PCLVisualizer viewer ("Result");
 pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud1 (new pcl::PointCloud<pcl::PointXYZRGBA>);
 pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZRGBA>);
 
-MovingObjectsIdentificator moi(0.1f);
+MovingObjectsIdentificator moi(0.01f);
 
 int main(int argc, char* argv[]) {
 
