@@ -19,19 +19,19 @@ class MovingObjectsIdentificator {
 private:
     float distanceThreshold;
 
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr inputCloud1;
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr inputCloud2;
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr workingCloud;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr inputCloud1;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr inputCloud2;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr workingCloud;
 public:
-    MovingObjectsIdentificator() : distanceThreshold(0.01), workingCloud (new pcl::PointCloud<pcl::PointXYZRGBA>) {}
-    MovingObjectsIdentificator(float distanceThreshold) : distanceThreshold(distanceThreshold), workingCloud (new pcl::PointCloud<pcl::PointXYZRGBA>) {}
+    MovingObjectsIdentificator() : distanceThreshold(0.01), workingCloud (new pcl::PointCloud<pcl::PointXYZ>) {}
+    MovingObjectsIdentificator(float distanceThreshold) : distanceThreshold(distanceThreshold), workingCloud (new pcl::PointCloud<pcl::PointXYZ>) {}
 
-    void setInputCloud1(pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud);
-    void setInputCloud2(pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud);
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr findDifference();
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr removeLargePlanes(pcl::PointCloud<pcl::PointXYZRGBA>::Ptr);
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr removeOutliers();
-    std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr > extractClusters();
+    void setInputCloud1(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
+    void setInputCloud2(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr findDifference();
+    pcl::PointCloud<pcl::PointXYZ>::Ptr removeLargePlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr removeOutliers();
+    std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > extractClusters();
 
 };
 

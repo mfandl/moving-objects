@@ -1,24 +1,24 @@
 #include "moving_objects_identificator.hpp"
 
-void MovingObjectsIdentificator::setInputCloud1(pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud) {
+void MovingObjectsIdentificator::setInputCloud1(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
     inputCloud1 = cloud;
 }
 
-void MovingObjectsIdentificator::setInputCloud2(pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud) {
+void MovingObjectsIdentificator::setInputCloud2(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
     inputCloud2 = cloud;
 }
 
-pcl::PointCloud<pcl::PointXYZRGBA>::Ptr MovingObjectsIdentificator::findDifference() {
+pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::findDifference() {
 
     if(workingCloud->points.size() > 0) {
         workingCloud->erase(workingCloud->begin(), workingCloud->end());
     }
 
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cleanedCloud1(removeLargePlanes(inputCloud1));
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cleanedCloud2(removeLargePlanes(inputCloud2));
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cleanedCloud1(removeLargePlanes(inputCloud1));
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cleanedCloud2(removeLargePlanes(inputCloud2));
 
 
-    for(pcl::PointCloud<pcl::PointXYZRGBA>::iterator it = cleanedCloud1->begin(), it2 = cleanedCloud2->begin(); it != cleanedCloud1->end(); it++, it2++) {
+    for(pcl::PointCloud<pcl::PointXYZ>::iterator it = cleanedCloud1->begin(), it2 = cleanedCloud2->begin(); it != cleanedCloud1->end(); it++, it2++) {
         if((!pcl::isFinite(*it) && pcl::isFinite(*it2)) || pcl::geometry::distance(it->getVector3fMap(), it2->getVector3fMap()) > distanceThreshold) {
             workingCloud->push_back(*it2);
         }
@@ -28,11 +28,11 @@ pcl::PointCloud<pcl::PointXYZRGBA>::Ptr MovingObjectsIdentificator::findDifferen
 
 }
 
-pcl::PointCloud<pcl::PointXYZRGBA>::Ptr MovingObjectsIdentificator::removeLargePlanes(pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud) {
+pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::removeLargePlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
 
-    pcl::PointCloud<pcl::PointXYZRGBA>::Ptr resultCloud (cloud->makeShared());
+    pcl::PointCloud<pcl::PointXYZ>::Ptr resultCloud (cloud->makeShared());
 
-    pcl::SACSegmentation<pcl::PointXYZRGBA> segmentation;
+    pcl::SACSegmentation<pcl::PointXYZ> segmentation;
     pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
 
@@ -51,7 +51,7 @@ pcl::PointCloud<pcl::PointXYZRGBA>::Ptr MovingObjectsIdentificator::removeLargeP
             break;
         }
 
-        pcl::ExtractIndices<pcl::PointXYZRGBA> extract;
+        pcl::ExtractIndices<pcl::PointXYZ> extract;
         extract.setInputCloud(resultCloud);
         extract.setIndices(inliers);
         extract.setNegative(true);
@@ -61,8 +61,8 @@ pcl::PointCloud<pcl::PointXYZRGBA>::Ptr MovingObjectsIdentificator::removeLargeP
     return resultCloud;
 }
 
-pcl::PointCloud<pcl::PointXYZRGBA>::Ptr MovingObjectsIdentificator::removeOutliers() {
-    pcl::StatisticalOutlierRemoval<pcl::PointXYZRGBA> sor;
+pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::removeOutliers() {
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
     sor.setInputCloud(workingCloud);
     sor.setMeanK(50);
     sor.setStddevMulThresh(1.0);
@@ -72,22 +72,22 @@ pcl::PointCloud<pcl::PointXYZRGBA>::Ptr MovingObjectsIdentificator::removeOutlie
 
 }
 
-std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr > MovingObjectsIdentificator::extractClusters() {
-    pcl::search::KdTree<pcl::PointXYZRGBA>::Ptr kdTree (new pcl::search::KdTree<pcl::PointXYZRGBA>);
+std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > MovingObjectsIdentificator::extractClusters() {
+    pcl::search::KdTree<pcl::PointXYZ>::Ptr kdTree (new pcl::search::KdTree<pcl::PointXYZ>);
     kdTree->setInputCloud(workingCloud);
 
     std::vector<pcl::PointIndices> indices;
-    pcl::EuclideanClusterExtraction<pcl::PointXYZRGBA> ece;
+    pcl::EuclideanClusterExtraction<pcl::PointXYZ> ece;
     ece.setClusterTolerance(0.02);
     ece.setMinClusterSize(1000);
     ece.setSearchMethod(kdTree);
     ece.setInputCloud(workingCloud);
     ece.extract(indices);
 
-    std::vector<pcl::PointCloud<pcl::PointXYZRGBA>::Ptr > clusters;
+    std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > clusters;
     for(std::vector<pcl::PointIndices>::iterator it = indices.begin(); it != indices.end(); it++) {
-        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cluster(new pcl::PointCloud<pcl::PointXYZRGBA>);
-        pcl::ExtractIndices<pcl::PointXYZRGBA> extract;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cluster(new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::ExtractIndices<pcl::PointXYZ> extract;
         extract.setInputCloud(workingCloud);
 
         pcl::PointIndices::Ptr pi(new pcl::PointIndices);
