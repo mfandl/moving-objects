@@ -1,40 +1,46 @@
 #include "moving_objects_identificator.hpp"
 
-void MovingObjectsIdentificator::setInputCloud1(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
-    inputCloud1 = cloud;
+MovingObjectsIdentificator::MovingObjectsIdentificator() :
+    workingCloud (new pcl::PointCloud<pcl::PointXYZ>),
+    differenceDistanceThreshold(0.01),
+    ransacDistanceThreshold(0.02),
+    ransacMaxIterations(100),
+    largePlaneMinimumSize(50000),
+    meanK(50),
+    stddevMulThresh(1.0),
+    clusterTolerance(0.2),
+    minClusterSize(1000),
+    enableSceneAlignment(true) {}
+
+std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> MovingObjectsIdentificator::identify() {
+    findDifference();
+    removeOutliers();
+    return extractClusters();
 }
 
-void MovingObjectsIdentificator::setInputCloud2(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
-    inputCloud2 = cloud;
-}
-
-pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::findDifference() {
-
+void MovingObjectsIdentificator::findDifference() {
     if(workingCloud->points.size() > 0) {
         workingCloud->erase(workingCloud->begin(), workingCloud->end());
     }
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr aligned = align();
-
-
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cleanedCloud1(removeLargePlanes(aligned));
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cleanedCloud1;
+    if(enableSceneAlignment) {
+        cleanedCloud1 = removeLargePlanes(align());
+    } else {
+        cleanedCloud1 = removeLargePlanes(inputCloud1);
+    }
     pcl::PointCloud<pcl::PointXYZ>::Ptr cleanedCloud2(removeLargePlanes(inputCloud2));
 
-
     for(pcl::PointCloud<pcl::PointXYZ>::iterator it = cleanedCloud1->begin(), it2 = cleanedCloud2->begin(); it != cleanedCloud1->end(); it++, it2++) {
-        if((!pcl::isFinite(*it) && pcl::isFinite(*it2)) || pcl::geometry::distance(it->getVector3fMap(), it2->getVector3fMap()) > distanceThreshold) {
+        if((!pcl::isFinite(*it) && pcl::isFinite(*it2)) || pcl::geometry::distance(it->getVector3fMap(), it2->getVector3fMap()) > differenceDistanceThreshold) {
             workingCloud->push_back(*it2);
         }
     }
 
-    return workingCloud;
-
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::removeLargePlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
-
     pcl::PointCloud<pcl::PointXYZ>::Ptr resultCloud (cloud->makeShared());
-
     pcl::SACSegmentation<pcl::PointXYZ> segmentation;
     pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
@@ -42,15 +48,15 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::removeLargePlane
     segmentation.setOptimizeCoefficients(true);
     segmentation.setModelType(pcl::SACMODEL_PLANE);
     segmentation.setMethodType(pcl::SAC_RANSAC);
-    segmentation.setMaxIterations(100);
-    segmentation.setDistanceThreshold(0.02);
+    segmentation.setMaxIterations(ransacMaxIterations);
+    segmentation.setDistanceThreshold(ransacDistanceThreshold);
 
     int pointsCount = resultCloud->points.size();
-
     while(resultCloud->points.size() > 0.3 * pointsCount) {
         segmentation.setInputCloud(resultCloud);
         segmentation.segment(*inliers, *coefficients);
-        if(inliers->indices.size() <= 50000) {
+
+        if(inliers->indices.size() <= largePlaneMinimumSize) {
             break;
         }
 
@@ -64,25 +70,22 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::removeLargePlane
     return resultCloud;
 }
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::removeOutliers() {
+void MovingObjectsIdentificator::removeOutliers() {
     pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
     sor.setInputCloud(workingCloud);
-    sor.setMeanK(50);
-    sor.setStddevMulThresh(1.0);
+    sor.setMeanK(meanK);
+    sor.setStddevMulThresh(stddevMulThresh);
     sor.filter(*workingCloud);
-
-    return workingCloud;
-
 }
 
-std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > MovingObjectsIdentificator::extractClusters() {
+std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> MovingObjectsIdentificator::extractClusters() {
     pcl::search::KdTree<pcl::PointXYZ>::Ptr kdTree (new pcl::search::KdTree<pcl::PointXYZ>);
     kdTree->setInputCloud(workingCloud);
 
     std::vector<pcl::PointIndices> indices;
     pcl::EuclideanClusterExtraction<pcl::PointXYZ> ece;
-    ece.setClusterTolerance(0.02);
-    ece.setMinClusterSize(1000);
+    ece.setClusterTolerance(clusterTolerance);
+    ece.setMinClusterSize(minClusterSize);
     ece.setSearchMethod(kdTree);
     ece.setInputCloud(workingCloud);
     ece.extract(indices);
@@ -105,14 +108,34 @@ std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > MovingObjectsIdentificator::ex
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::align() {
-    pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-    icp.setInputSource(inputCloud1);
-    icp.setInputTarget(inputCloud2);
 
+    //removing NaN's because it causes align boudary error (pcl git commit hash: cfd04b3)
+    pcl::PointCloud<pcl::PointXYZ>::Ptr fixedCloud1 (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr fixedCloud2 (new pcl::PointCloud<pcl::PointXYZ>);
+
+    std::vector<int> indices;
+    pcl::removeNaNFromPointCloud(*inputCloud1, *fixedCloud1, indices);
+    pcl::removeNaNFromPointCloud(*inputCloud2, *fixedCloud2, indices);
+
+    pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+    icp.setInputSource(fixedCloud1);
+    icp.setInputTarget(fixedCloud2);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr aligned (new pcl::PointCloud<pcl::PointXYZ>);
-    //exit(0);
     icp.align(*aligned);
 
     return aligned;
+}
+
+void MovingObjectsIdentificator::setInputCloud1(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
+    inputCloud1 = cloud;
+}
+
+void MovingObjectsIdentificator::setInputCloud2(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
+    inputCloud2 = cloud;
+}
+
+void MovingObjectsIdentificator::setInputClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2) {
+    inputCloud1 = cloud1;
+    inputCloud2 = cloud2;
 }

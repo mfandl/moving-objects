@@ -18,7 +18,7 @@ using namespace std;
 pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1 (new pcl::PointCloud<pcl::PointXYZ>);
 pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZ>);
 
-MovingObjectsIdentificator moi(0.01f);
+MovingObjectsIdentificator moi;
 
 int main(int argc, char* argv[]) {
 
@@ -51,19 +51,10 @@ int main(int argc, char* argv[]) {
         return(-1);
     }
 
-    std::vector<int> indices;
-
-    pcl::removeNaNFromPointCloud(*cloud1, *cloud1, indices);
-    pcl::removeNaNFromPointCloud(*cloud2, *cloud2, indices);
-
     cout << "finding moved objects" << endl;
 
-    moi.setInputCloud1(cloud1);
-    moi.setInputCloud2(cloud2);
-
-    moi.findDifference();
-    moi.removeOutliers();
-    std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters = moi.extractClusters();
+    moi.setInputClouds(cloud1, cloud2);
+    std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters = moi.identify();
     cout << "clusters: " << clusters.size() << endl;
 //
     boost::shared_ptr<pcl::rec_3d_framework::MeshSource<pcl::PointXYZ> > mesh_source (new pcl::rec_3d_framework::MeshSource<pcl::PointXYZ>);
