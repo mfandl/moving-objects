@@ -8,18 +8,21 @@ MovingObjectsIdentificator::MovingObjectsIdentificator() :
     largePlaneMinimumSize(50000),
     meanK(50),
     stddevMulThresh(1.0),
-    clusterTolerance(0.2),
+    clusterTolerance(0.02),
     minClusterSize(1000),
     enableSceneAlignment(true),
-    ICPMaxIterations(100) {}
+    ICPMaxIterations(10) {}
 
 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> MovingObjectsIdentificator::identify() {
+    std::cout << "start" << std::endl;
     findDifference();
     removeOutliers();
     return extractClusters();
+    std::cout << "end" << std::endl;
 }
 
 void MovingObjectsIdentificator::findDifference() {
+    std::cout << "finding difference" << std::endl;
     if(workingCloud->points.size() > 0) {
         workingCloud->erase(workingCloud->begin(), workingCloud->end());
     }
@@ -41,6 +44,7 @@ void MovingObjectsIdentificator::findDifference() {
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::removeLargePlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
+    std::cout << "removing large planes" << std::endl;
     pcl::PointCloud<pcl::PointXYZ>::Ptr resultCloud (cloud->makeShared());
     pcl::SACSegmentation<pcl::PointXYZ> segmentation;
     pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
@@ -72,6 +76,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::removeLargePlane
 }
 
 void MovingObjectsIdentificator::removeOutliers() {
+    std::cout << "removing outliers" << std::endl;
     pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
     sor.setInputCloud(workingCloud);
     sor.setMeanK(meanK);
@@ -80,6 +85,7 @@ void MovingObjectsIdentificator::removeOutliers() {
 }
 
 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> MovingObjectsIdentificator::extractClusters() {
+    std::cout << "extracting" << std::endl;
     pcl::search::KdTree<pcl::PointXYZ>::Ptr kdTree (new pcl::search::KdTree<pcl::PointXYZ>);
     kdTree->setInputCloud(workingCloud);
 
@@ -109,7 +115,7 @@ std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> MovingObjectsIdentificator::ext
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::align() {
-
+    std::cout << "aligning" << std::endl;
     //removing NaN's because it causes align boudary error (pcl git commit hash: cfd04b3)
     pcl::PointCloud<pcl::PointXYZ>::Ptr fixedCloud1 (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr fixedCloud2 (new pcl::PointCloud<pcl::PointXYZ>);

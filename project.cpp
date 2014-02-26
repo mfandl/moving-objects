@@ -51,48 +51,12 @@ int main(int argc, char* argv[]) {
         return(-1);
     }
 
-    cout << "finding moved objects" << endl;
-
     moi.setInputClouds(cloud1, cloud2);
+    moi.setEnableSceneAlignment(false);
     std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters = moi.identify();
     cout << "clusters: " << clusters.size() << endl;
-//
-    boost::shared_ptr<pcl::rec_3d_framework::MeshSource<pcl::PointXYZ> > mesh_source (new pcl::rec_3d_framework::MeshSource<pcl::PointXYZ>);
-    mesh_source->setPath(models);
-    mesh_source->setResolution(150);
-    mesh_source->setTesselationLevel(1);
-    mesh_source->setViewAngle(57.f);
-    mesh_source->setRadiusSphere(1.5f);
-    mesh_source->setModelScale(1.f);
-    mesh_source->generate(training);
 
-    boost::shared_ptr<pcl::rec_3d_framework::Source<pcl::PointXYZ> > cast_source;
-    cast_source = boost::static_pointer_cast<pcl::rec_3d_framework::MeshSource<pcl::PointXYZ> > (mesh_source);
 
-    boost::shared_ptr<pcl::rec_3d_framework::PreProcessorAndNormalEstimator<pcl::PointXYZ, pcl::Normal> > normal_estimator;
-    normal_estimator.reset (new pcl::rec_3d_framework::PreProcessorAndNormalEstimator<pcl::PointXYZ, pcl::Normal>);
-    normal_estimator->setCMR (true);
-    normal_estimator->setDoVoxelGrid(true);
-    normal_estimator->setRemoveOutliers(true);
-    normal_estimator->setFactorsForCMR(3, 7);
-
-    //esf -> compare with (c)vfh
-    boost::shared_ptr<pcl::rec_3d_framework::ESFEstimation<pcl::PointXYZ, pcl::ESFSignature640> > estimator;
-    estimator.reset(new pcl::rec_3d_framework::ESFEstimation<pcl::PointXYZ, pcl::ESFSignature640>);
-
-    boost::shared_ptr<pcl::rec_3d_framework::GlobalEstimator<pcl::PointXYZ, pcl::ESFSignature640> > cast_estimator;
-    cast_estimator = boost::dynamic_pointer_cast<pcl::rec_3d_framework::ESFEstimation<pcl::PointXYZ, pcl::ESFSignature640> > (estimator);
-
-    pcl::rec_3d_framework::GlobalNNPipeline<flann::L1, pcl::PointXYZ, pcl::ESFSignature640> global;
-    global.setDataSource(cast_source);
-    global.setTrainingDir(training);
-    string dsc = "esf";
-    global.setDescriptorName(dsc);
-    global.setFeatureEstimator(cast_estimator);
-    global.setNN(NN);
-    global.initialize(false);
-
-    vector<string> categories;
 
     pcl::visualization::PCLVisualizer viewer ("Result");
     viewer.setBackgroundColor(0, 0, 0);
@@ -100,42 +64,41 @@ int main(int argc, char* argv[]) {
     int clusterNum = 0;
     float dist_ = 0.03f;
     int categoryTextId = 0;
-    for(vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>::iterator it = clusters.begin(); it != clusters.end(); it++) {
-        global.setInputCloud(*it);
-        global.classify();
-
-        vector<string> clusterCategories;
-        vector<float> confidence;
-
-        global.getCategory(clusterCategories);
-        global.getConfidence(confidence);
-        categories.push_back(clusterCategories[0]);
-
-        pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZ> randomColor (*it);
-        viewer.addPointCloud<pcl::PointXYZ> (*it, randomColor, "cluster" + clusterNum);
-        clusterNum++;
-
-        Eigen::Vector4f centroid;
-        pcl::compute3DCentroid (**it, centroid);
-
-        for(int i = 0; i < clusterCategories.size(); i++) {
-
-            pcl::PointXYZ textPosition;
-            textPosition.x = centroid[0];
-            textPosition.y = centroid[1] - static_cast<float> (i+1) * dist_;
-            textPosition.z = centroid[2];
-
-            ostringstream prob_str;
-            prob_str.precision (1);
-            prob_str << clusterCategories[i] << " [" <<confidence[i] << "]";
-
-            stringstream textId;
-            textId << "text" << categoryTextId;
-
-            viewer.addText3D(prob_str.str(), textPosition, 0.015f, 1, 0, 1, textId.str(), 0);
-            categoryTextId++;
-        }
-    }
+//    for(vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>::iterator it = clusters.begin(); it != clusters.end(); it++) {
+//        global.setInputCloud(*it);
+//        global.classify();
+//
+//        vector<string> clusterCategories;
+//        vector<float> confidence;
+//
+//        global.getCategory(clusterCategories);
+//        global.getConfidence(confidence);
+//
+//        pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZ> randomColor (*it);
+//        viewer.addPointCloud<pcl::PointXYZ> (*it, randomColor, "cluster" + clusterNum);
+//        clusterNum++;
+//
+//        Eigen::Vector4f centroid;
+//        pcl::compute3DCentroid (**it, centroid);
+//
+//        for(int i = 0; i < clusterCategories.size(); i++) {
+//
+//            pcl::PointXYZ textPosition;
+//            textPosition.x = centroid[0];
+//            textPosition.y = centroid[1] - static_cast<float> (i+1) * dist_;
+//            textPosition.z = centroid[2];
+//
+//            ostringstream prob_str;
+//            prob_str.precision (1);
+//            prob_str << clusterCategories[i] << " [" <<confidence[i] << "]";
+//
+//            stringstream textId;
+//            textId << "text" << categoryTextId;
+//
+//            viewer.addText3D(prob_str.str(), textPosition, 0.015f, 1, 0, 1, textId.str(), 0);
+//            categoryTextId++;
+//        }
+//    }
 
 
 
