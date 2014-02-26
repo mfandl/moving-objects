@@ -28,6 +28,7 @@ private:
     float clusterTolerance;
     int minClusterSize;
     bool enableSceneAlignment;
+    int ICPMaxIterations;
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr inputCloud1;
     pcl::PointCloud<pcl::PointXYZ>::Ptr inputCloud2;
@@ -45,8 +46,26 @@ public:
     void setInputClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2);
 
     std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> identify();
-
-
+    float getDifferenceDistanceThreshold();
+    void setDifferenceDistanceTreshold(float thr);
+    float getRansacDistanceThreshold();
+    void setRansacDistanceThreshold(float thr);
+    int getRansacMaxIterations();
+    void setRansacMaxIterations(int max);
+    int getLargePlaneMinimumSize();
+    void setLargePlaneMinimumSize(int size);
+    int getMeanK();
+    void setMeanK(int meanK);
+    float getStddevMulThresh();
+    void setStddevMulThresh(float thr);
+    float getClusterTolerance();
+    void setClusterTolerance(int tolerance);
+    int getMinClusterSize();
+    void setMinClusterSize(int size);
+    bool getEnableSceneAlignment();
+    void setEnableSceneAlignment(bool enable);
+    int getICPMaxIterations();
+    void setICPMaxIterations(int iterations);
 };
 
 #endif

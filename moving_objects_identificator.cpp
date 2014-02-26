@@ -10,7 +10,8 @@ MovingObjectsIdentificator::MovingObjectsIdentificator() :
     stddevMulThresh(1.0),
     clusterTolerance(0.2),
     minClusterSize(1000),
-    enableSceneAlignment(true) {}
+    enableSceneAlignment(true),
+    ICPMaxIterations(100) {}
 
 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> MovingObjectsIdentificator::identify() {
     findDifference();
@@ -120,6 +121,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::align() {
     pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
     icp.setInputSource(fixedCloud1);
     icp.setInputTarget(fixedCloud2);
+    icp.setMaximumIterations(ICPMaxIterations);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr aligned (new pcl::PointCloud<pcl::PointXYZ>);
     icp.align(*aligned);
@@ -138,4 +140,83 @@ void MovingObjectsIdentificator::setInputCloud2(pcl::PointCloud<pcl::PointXYZ>::
 void MovingObjectsIdentificator::setInputClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2) {
     inputCloud1 = cloud1;
     inputCloud2 = cloud2;
+}
+
+float MovingObjectsIdentificator::getDifferenceDistanceThreshold() {
+    return differenceDistanceThreshold;
+}
+
+void MovingObjectsIdentificator::setDifferenceDistanceTreshold(float thr){
+    differenceDistanceThreshold = thr;
+}
+
+float MovingObjectsIdentificator::getRansacDistanceThreshold() {
+    return ransacDistanceThreshold;
+}
+
+void MovingObjectsIdentificator::setRansacDistanceThreshold(float thr) {
+    ransacDistanceThreshold = thr;
+}
+
+int MovingObjectsIdentificator::getRansacMaxIterations() {
+    return ransacMaxIterations;
+}
+
+void MovingObjectsIdentificator::setRansacMaxIterations(int max) {
+    ransacMaxIterations = max;
+}
+
+int MovingObjectsIdentificator::getLargePlaneMinimumSize() {
+    return largePlaneMinimumSize;
+}
+
+void MovingObjectsIdentificator::setLargePlaneMinimumSize(int size) {
+    largePlaneMinimumSize = size;
+}
+
+int MovingObjectsIdentificator::getMeanK() {
+    return meanK;
+}
+
+void MovingObjectsIdentificator::setMeanK(int meanK) {
+    this->meanK = meanK;
+}
+
+float MovingObjectsIdentificator::getStddevMulThresh() {
+    return stddevMulThresh;
+}
+void MovingObjectsIdentificator::setStddevMulThresh(float thr) {
+    stddevMulThresh = thr;
+}
+
+float MovingObjectsIdentificator::getClusterTolerance() {
+    return clusterTolerance;
+}
+
+void MovingObjectsIdentificator::setClusterTolerance(int tolerance) {
+    clusterTolerance = tolerance;
+}
+
+int MovingObjectsIdentificator::getMinClusterSize() {
+    return minClusterSize;
+}
+
+void MovingObjectsIdentificator::setMinClusterSize(int size) {
+    minClusterSize = size;
+}
+
+bool MovingObjectsIdentificator::getEnableSceneAlignment() {
+    return enableSceneAlignment;
+}
+
+void MovingObjectsIdentificator::setEnableSceneAlignment(bool enable) {
+    enableSceneAlignment = enable;
+}
+
+int MovingObjectsIdentificator::getICPMaxIterations() {
+    return ICPMaxIterations;
+}
+
+void MovingObjectsIdentificator::setICPMaxIterations(int iterations) {
+    ICPMaxIterations = iterations;
 }
