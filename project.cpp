@@ -21,6 +21,8 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZ>);
 
 MovingObjectsIdentificator moi;
 
+void keyboard_cb(const pcl::visualization::KeyboardEvent &event, void* viewer_void);
+
 int main(int argc, char* argv[]) {
 
     if(argc < 3) {
@@ -68,10 +70,12 @@ int main(int argc, char* argv[]) {
 
 
     pcl::visualization::PCLVisualizer viewer ("Result");
+    viewer.registerKeyboardCallback(&keyboard_cb, NULL);
     viewer.setBackgroundColor(0, 0, 0);
     viewer.addPointCloud<pcl::PointXYZ> (cloud2, "current frame");
     int clusterId = 0;
     for(vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>::iterator it = clusters.begin(); it != clusters.end(); it++) {
+
         pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZ> randomColor (*it);
         viewer.addPointCloud<pcl::PointXYZ> (*it, randomColor, "cluster" + clusterId);
 
@@ -109,4 +113,8 @@ int main(int argc, char* argv[]) {
     }
 
     return 0;
+}
+
+void keyboard_cb(const pcl::visualization::KeyboardEvent &event, void* viewer_void) {
+    cout << "key pressed: " << event.getKeySym() << endl;
 }
