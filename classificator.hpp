@@ -15,6 +15,7 @@ private:
     std::string trainingDir;
     std::string descriptorName;
     int nn;
+    pcl::rec_3d_framework::GlobalNNPipeline<flann::L1, pcl::PointXYZ, pcl::ESFSignature640> global;
 public:
 
     class ClusterClasses {
@@ -26,8 +27,9 @@ public:
     Classificator();
 
     void setInputClouds(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters) {this->clusters = clusters;};
-    std::vector<ClusterClasses> classify();
+    void setup();
 
+    std::vector<ClusterClasses> classify();
     void setModelsDir(std::string dir) {
         modelsDir = dir;
     }

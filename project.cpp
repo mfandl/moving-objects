@@ -5,6 +5,7 @@
 #include <pcl/visualization/pcl_visualizer.h>
 
 #include "moving_objects_identificator.hpp"
+#include "classificator.hpp"
 
 #include <pcl/pcl_macros.h>
 #include <pcl/apps/3d_rec_framework/pipeline/global_nn_classifier.h>
@@ -56,49 +57,47 @@ int main(int argc, char* argv[]) {
     std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters = moi.identify();
     cout << "clusters: " << clusters.size() << endl;
 
+    Classificator classificator;
+    classificator.setInputClouds(clusters);
+    classificator.setModelsDir(models);
+    classificator.setTrainingDir(training);
+    classificator.setNN(NN);
+    classificator.setup();
+    std::vector<Classificator::ClusterClasses> classes = classificator.classify();
+
 
 
     pcl::visualization::PCLVisualizer viewer ("Result");
     viewer.setBackgroundColor(0, 0, 0);
     viewer.addPointCloud<pcl::PointXYZ> (cloud2, "current frame");
-    int clusterNum = 0;
-    float dist_ = 0.03f;
-    int categoryTextId = 0;
-//    for(vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>::iterator it = clusters.begin(); it != clusters.end(); it++) {
-//        global.setInputCloud(*it);
-//        global.classify();
-//
-//        vector<string> clusterCategories;
-//        vector<float> confidence;
-//
-//        global.getCategory(clusterCategories);
-//        global.getConfidence(confidence);
-//
-//        pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZ> randomColor (*it);
-//        viewer.addPointCloud<pcl::PointXYZ> (*it, randomColor, "cluster" + clusterNum);
-//        clusterNum++;
-//
-//        Eigen::Vector4f centroid;
-//        pcl::compute3DCentroid (**it, centroid);
-//
-//        for(int i = 0; i < clusterCategories.size(); i++) {
-//
-//            pcl::PointXYZ textPosition;
-//            textPosition.x = centroid[0];
-//            textPosition.y = centroid[1] - static_cast<float> (i+1) * dist_;
-//            textPosition.z = centroid[2];
-//
-//            ostringstream prob_str;
-//            prob_str.precision (1);
-//            prob_str << clusterCategories[i] << " [" <<confidence[i] << "]";
-//
-//            stringstream textId;
-//            textId << "text" << categoryTextId;
-//
-//            viewer.addText3D(prob_str.str(), textPosition, 0.015f, 1, 0, 1, textId.str(), 0);
-//            categoryTextId++;
-//        }
-//    }
+    int clusterId = 0;
+    for(vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>::iterator it = clusters.begin(); it != clusters.end(); it++) {
+        pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZ> randomColor (*it);
+        viewer.addPointCloud<pcl::PointXYZ> (*it, randomColor, "cluster" + clusterId);
+
+
+        Eigen::Vector4f clusterCentroid;
+        pcl::compute3DCentroid (**it, clusterCentroid);
+
+        pcl::PointXYZ textPosition;
+        textPosition.x = clusterCentroid[0];
+        textPosition.y = clusterCentroid[1];
+        textPosition.z = clusterCentroid[2];
+
+        stringstream textId;
+        textId << "cluster-id: " << clusterId;
+
+        viewer.addText3D(textId.str(), textPosition, 0.015f, 1, 0, 1, textId.str(), 0);
+        cout << "#" << textId.str() << endl;
+
+        vector<string>::iterator namesIt;
+        vector<float>::iterator confIt;
+        for(namesIt = classes[clusterId].names.begin(), confIt = classes[clusterId].confidence.begin(); namesIt != classes[clusterId].names.end(); namesIt++, confIt++) {
+            cout << "##" << *namesIt << "[" << *confIt << "]" << endl;
+        }
+
+        clusterId++;
+    }
 
 
 

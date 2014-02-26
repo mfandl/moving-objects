@@ -2,7 +2,7 @@
 
 Classificator::Classificator() : descriptorName ("esf") {};
 
-std::vector<Classificator::ClusterClasses> Classificator::classify() {
+void Classificator::setup() {
     boost::shared_ptr<pcl::rec_3d_framework::MeshSource<pcl::PointXYZ> > mesh_source (new pcl::rec_3d_framework::MeshSource<pcl::PointXYZ>);
     mesh_source->setPath(modelsDir);
     mesh_source->setResolution(150);
@@ -28,7 +28,6 @@ std::vector<Classificator::ClusterClasses> Classificator::classify() {
     boost::shared_ptr<pcl::rec_3d_framework::GlobalEstimator<pcl::PointXYZ, pcl::ESFSignature640> > cast_estimator;
     cast_estimator = boost::dynamic_pointer_cast<pcl::rec_3d_framework::ESFEstimation<pcl::PointXYZ, pcl::ESFSignature640> > (estimator);
 
-    pcl::rec_3d_framework::GlobalNNPipeline<flann::L1, pcl::PointXYZ, pcl::ESFSignature640> global;
     global.setDataSource(cast_source);
     global.setTrainingDir(trainingDir);
     global.setDescriptorName(descriptorName);
@@ -36,8 +35,9 @@ std::vector<Classificator::ClusterClasses> Classificator::classify() {
     global.setNN(nn);
     global.initialize(false);
 
-    int clusterNum = 0;
-    float dist_ = 0.03f;
+}
+
+std::vector<Classificator::ClusterClasses> Classificator::classify() {
     std::vector<Classificator::ClusterClasses> clusterClassesVector;
     for(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>::iterator it = clusters.begin(); it != clusters.end(); it++) {
         global.setInputCloud(*it);
@@ -51,5 +51,4 @@ std::vector<Classificator::ClusterClasses> Classificator::classify() {
     }
 
     return clusterClassesVector;
-
 }
