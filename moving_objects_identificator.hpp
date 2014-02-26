@@ -1,5 +1,6 @@
 #ifndef MOI_HPP
 #define MOI_HPP
+
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/common/geometry.h>
@@ -14,6 +15,7 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/registration/icp.h>
 
 class MovingObjectsIdentificator {
 private:
@@ -32,6 +34,7 @@ public:
     pcl::PointCloud<pcl::PointXYZ>::Ptr removeLargePlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr);
     pcl::PointCloud<pcl::PointXYZ>::Ptr removeOutliers();
     std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > extractClusters();
+    pcl::PointCloud<pcl::PointXYZ>::Ptr align();
 
 };
 

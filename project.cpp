@@ -51,6 +51,13 @@ int main(int argc, char* argv[]) {
         return(-1);
     }
 
+    std::vector<int> indices;
+
+    pcl::removeNaNFromPointCloud(*cloud1, *cloud1, indices);
+    pcl::removeNaNFromPointCloud(*cloud2, *cloud2, indices);
+
+    cout << "finding moved objects" << endl;
+
     moi.setInputCloud1(cloud1);
     moi.setInputCloud2(cloud2);
 
@@ -58,7 +65,7 @@ int main(int argc, char* argv[]) {
     moi.removeOutliers();
     std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters = moi.extractClusters();
     cout << "clusters: " << clusters.size() << endl;
-
+//
     boost::shared_ptr<pcl::rec_3d_framework::MeshSource<pcl::PointXYZ> > mesh_source (new pcl::rec_3d_framework::MeshSource<pcl::PointXYZ>);
     mesh_source->setPath(models);
     mesh_source->setResolution(150);
@@ -137,23 +144,8 @@ int main(int argc, char* argv[]) {
             viewer.addText3D(prob_str.str(), textPosition, 0.015f, 1, 0, 1, textId.str(), 0);
             categoryTextId++;
         }
-
-
-
-        cout << "Category: " << clusterCategories[0] << " - " << confidence[0] << endl;
     }
 
-
-    //pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZ> cloudColor(cloud2);
-    //viewer.addPointCloud<pcl::PointXYZ> (cloud2, "current frame");
-
-
-//    int clusterNum = 0;
-//    for(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>::iterator it = clusters.begin(); it != clusters.end(); it++) {
-//        pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZ> randomColor (*it);
-//        viewer.addPointCloud<pcl::PointXYZ> (*it, randomColor, "cluster" + clusterNum);
-//        clusterNum++;
-//    }
 
 
     viewer.initCameraParameters();

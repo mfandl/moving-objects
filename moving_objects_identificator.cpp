@@ -14,7 +14,10 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::findDifference()
         workingCloud->erase(workingCloud->begin(), workingCloud->end());
     }
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cleanedCloud1(removeLargePlanes(inputCloud1));
+    pcl::PointCloud<pcl::PointXYZ>::Ptr aligned = align();
+
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cleanedCloud1(removeLargePlanes(aligned));
     pcl::PointCloud<pcl::PointXYZ>::Ptr cleanedCloud2(removeLargePlanes(inputCloud2));
 
 
@@ -99,4 +102,17 @@ std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > MovingObjectsIdentificator::ex
     }
 
     return clusters;
+}
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::align() {
+    pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+    icp.setInputSource(inputCloud1);
+    icp.setInputTarget(inputCloud2);
+
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr aligned (new pcl::PointCloud<pcl::PointXYZ>);
+    //exit(0);
+    icp.align(*aligned);
+
+    return aligned;
 }
