@@ -16,12 +16,18 @@
 
 using namespace std;
 
+pcl::visualization::PCLVisualizer viewer ("Result");
+
 pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1 (new pcl::PointCloud<pcl::PointXYZ>);
 pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZ>);
 
 MovingObjectsIdentificator moi;
+Classificator classificator;
+void findObjectsAndClassify();
 
 void keyboard_cb(const pcl::visualization::KeyboardEvent &event, void* viewer_void);
+
+bool keyboardCbLock = true;
 
 int main(int argc, char* argv[]) {
 
@@ -30,10 +36,10 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    string fCloud1;
-    string fCloud2;
-    string models;
-    string training;
+    string fCloud1 = "";
+    string fCloud2 = "";
+    string models = "";
+    string training = "";
     int NN;
 
     pcl::console::parse_argument(argc, argv, "-cloud1", fCloud1);
@@ -41,40 +47,90 @@ int main(int argc, char* argv[]) {
     pcl::console::parse_argument(argc, argv, "-models", models);
     pcl::console::parse_argument(argc, argv, "-training", training);
     pcl::console::parse_argument(argc, argv, "-nn", NN);
-    cout << "arg1 - " << fCloud1 << endl;
-    cout << "arg2 - " << fCloud2 << endl;
 
-    if(pcl::io::loadPCDFile<pcl::PointXYZ>(fCloud1, *cloud1) == -1) {
-        PCL_ERROR("Cloud1 reading failed\n");
-        return(-1);
+
+
+
+    classificator.setModelsDir(models);
+    classificator.setTrainingDir(training);
+    classificator.setNN(NN);
+    classificator.setup();
+
+    viewer.registerKeyboardCallback(&keyboard_cb, NULL);
+    viewer.setBackgroundColor(0, 0, 0);
+
+    viewer.initCameraParameters();
+
+    if(fCloud1 != "" && fCloud2 != "") {
+        if(pcl::io::loadPCDFile<pcl::PointXYZ>(fCloud1, *cloud1) == -1) {
+            PCL_ERROR("Cloud1 reading failed\n");
+            return(-1);
+        }
+
+        if(pcl::io::loadPCDFile<pcl::PointXYZ>(fCloud2, *cloud2) == -1) {
+            PCL_ERROR("Cloud2 reading failed\n");
+            return(-1);
+        }
+
+        findObjectsAndClassify();
+    } else {
+        keyboardCbLock = false;
     }
 
-    if(pcl::io::loadPCDFile<pcl::PointXYZ>(fCloud2, *cloud2) == -1) {
-        PCL_ERROR("Cloud2 reading failed\n");
-        return(-1);
+    while(!viewer.wasStopped()) {
+        viewer.spinOnce(100);
+        boost::this_thread::sleep (boost::posix_time::milliseconds(100));
     }
+
+    return 0;
+}
+
+void keyboard_cb(const pcl::visualization::KeyboardEvent &event, void* viewer_void) {
+    if(!keyboardCbLock && event.keyDown()) {
+        if(event.getKeySym() == "space") {
+            string fCloud1, fCloud2;
+            cout << "Path to cloud1: " << endl;
+            cin >> fCloud1;
+            cout << "Path to cloud2: " << endl;
+            cin >> fCloud2;
+
+            if(pcl::io::loadPCDFile<pcl::PointXYZ>(fCloud1, *cloud1) == -1) {
+                PCL_ERROR("Cloud1 reading failed\n");
+                exit(-1);
+            }
+
+            if(pcl::io::loadPCDFile<pcl::PointXYZ>(fCloud2, *cloud2) == -1) {
+                PCL_ERROR("Cloud2 reading failed\n");
+                exit(-1);
+            }
+
+            findObjectsAndClassify();
+
+        }
+
+    }
+}
+
+void findObjectsAndClassify() {
+
+    keyboardCbLock = true;
+
+    viewer.removeAllPointClouds();
+    viewer.removeAllShapes();
 
     moi.setInputClouds(cloud1, cloud2);
     moi.setEnableSceneAlignment(false);
     std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters = moi.identify();
     cout << "clusters: " << clusters.size() << endl;
 
-    Classificator classificator;
     classificator.setInputClouds(clusters);
-    classificator.setModelsDir(models);
-    classificator.setTrainingDir(training);
-    classificator.setNN(NN);
-    classificator.setup();
     std::vector<Classificator::ClusterClasses> classes = classificator.classify();
 
-
-
-    pcl::visualization::PCLVisualizer viewer ("Result");
-    viewer.registerKeyboardCallback(&keyboard_cb, NULL);
-    viewer.setBackgroundColor(0, 0, 0);
     viewer.addPointCloud<pcl::PointXYZ> (cloud2, "current frame");
     int clusterId = 0;
     for(vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>::iterator it = clusters.begin(); it != clusters.end(); it++) {
+
+
 
         pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZ> randomColor (*it);
         viewer.addPointCloud<pcl::PointXYZ> (*it, randomColor, "cluster" + clusterId);
@@ -103,18 +159,5 @@ int main(int argc, char* argv[]) {
         clusterId++;
     }
 
-
-
-    viewer.initCameraParameters();
-
-    while(!viewer.wasStopped()) {
-        viewer.spinOnce(100);
-        boost::this_thread::sleep (boost::posix_time::milliseconds(100));
-    }
-
-    return 0;
-}
-
-void keyboard_cb(const pcl::visualization::KeyboardEvent &event, void* viewer_void) {
-    cout << "key pressed: " << event.getKeySym() << endl;
+    keyboardCbLock = false;
 }
