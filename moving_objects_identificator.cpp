@@ -11,18 +11,20 @@ MovingObjectsIdentificator::MovingObjectsIdentificator() :
     clusterTolerance(0.02),
     minClusterSize(1000),
     enableSceneAlignment(true),
-    ICPMaxIterations(10) {}
+    ICPMaxIterations(10),
+    verbose(false) {}
 
 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> MovingObjectsIdentificator::identify() {
-    std::cout << "start" << std::endl;
+    if(verbose) std::cout << "\nMoving Object Identification start" << std::endl;
     findDifference();
     removeOutliers();
+    if(verbose) std::cout << "Moving Object Identification end" << std::endl;
     return extractClusters();
-    std::cout << "end" << std::endl;
+
 }
 
 void MovingObjectsIdentificator::findDifference() {
-    std::cout << "finding difference" << std::endl;
+    if(verbose) std::cout << "Finding difference in clouds ... " << std::endl;
     if(workingCloud->points.size() > 0) {
         workingCloud->erase(workingCloud->begin(), workingCloud->end());
     }
@@ -40,11 +42,12 @@ void MovingObjectsIdentificator::findDifference() {
             workingCloud->push_back(*it2);
         }
     }
+    if(verbose) std::cout << "Finding difference in clouds done!" << std::endl;
 
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::removeLargePlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
-    std::cout << "removing large planes" << std::endl;
+    if(verbose) std::cout << "Removing large planes ... ";
     pcl::PointCloud<pcl::PointXYZ>::Ptr resultCloud (cloud->makeShared());
     pcl::SACSegmentation<pcl::PointXYZ> segmentation;
     pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
@@ -72,20 +75,24 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::removeLargePlane
         extract.filterDirectly(resultCloud);
     }
 
+    if(verbose) std::cout << "done!" << std::endl;
+
     return resultCloud;
 }
 
 void MovingObjectsIdentificator::removeOutliers() {
-    std::cout << "removing outliers" << std::endl;
+    if(verbose) std::cout << "Removing outliers ... ";
     pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
     sor.setInputCloud(workingCloud);
     sor.setMeanK(meanK);
     sor.setStddevMulThresh(stddevMulThresh);
     sor.filter(*workingCloud);
+    if(verbose) std::cout << "done!" << std::endl;
+
 }
 
 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> MovingObjectsIdentificator::extractClusters() {
-    std::cout << "extracting" << std::endl;
+    if(verbose) std::cout << "Extracting clusters ... ";
     pcl::search::KdTree<pcl::PointXYZ>::Ptr kdTree (new pcl::search::KdTree<pcl::PointXYZ>);
     kdTree->setInputCloud(workingCloud);
 
@@ -111,11 +118,13 @@ std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> MovingObjectsIdentificator::ext
         clusters.push_back(cluster);
     }
 
+    if(verbose) std::cout << "done!" << std::endl;
+
     return clusters;
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::align() {
-    std::cout << "aligning" << std::endl;
+    if(verbose) std::cout << "Aligning scenes ... ";
     //removing NaN's because it causes align boudary error (pcl git commit hash: cfd04b3)
     pcl::PointCloud<pcl::PointXYZ>::Ptr fixedCloud1 (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr fixedCloud2 (new pcl::PointCloud<pcl::PointXYZ>);
@@ -131,6 +140,8 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr MovingObjectsIdentificator::align() {
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr aligned (new pcl::PointCloud<pcl::PointXYZ>);
     icp.align(*aligned);
+
+    if(verbose) std::cout << (icp.hasConverged() ? "done! " : "dailed! ") << " score: " << icp.getFitnessScore() << std::endl;
 
     return aligned;
 }
@@ -225,4 +236,8 @@ int MovingObjectsIdentificator::getICPMaxIterations() {
 
 void MovingObjectsIdentificator::setICPMaxIterations(int iterations) {
     ICPMaxIterations = iterations;
+}
+
+void MovingObjectsIdentificator::setVerbose(bool verbose) {
+    this->verbose = verbose;
 }

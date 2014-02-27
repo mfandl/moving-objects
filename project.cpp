@@ -24,6 +24,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZ>);
 MovingObjectsIdentificator moi;
 Classificator classificator;
 void findObjectsAndClassify();
+void printInstructions();
 
 void keyboard_cb(const pcl::visualization::KeyboardEvent &event, void* viewer_void);
 
@@ -48,7 +49,7 @@ int main(int argc, char* argv[]) {
     pcl::console::parse_argument(argc, argv, "-training", training);
     pcl::console::parse_argument(argc, argv, "-nn", NN);
 
-
+    moi.setVerbose(true);
 
 
     classificator.setModelsDir(models);
@@ -75,6 +76,7 @@ int main(int argc, char* argv[]) {
         findObjectsAndClassify();
     } else {
         keyboardCbLock = false;
+        printInstructions();
     }
 
     while(!viewer.wasStopped()) {
@@ -121,7 +123,7 @@ void findObjectsAndClassify() {
     moi.setInputClouds(cloud1, cloud2);
     moi.setEnableSceneAlignment(false);
     std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters = moi.identify();
-    cout << "clusters: " << clusters.size() << endl;
+    cout << "\nclusters: " << clusters.size() << endl;
 
     classificator.setInputClouds(clusters);
     std::vector<Classificator::ClusterClasses> classes = classificator.classify();
@@ -129,9 +131,6 @@ void findObjectsAndClassify() {
     viewer.addPointCloud<pcl::PointXYZ> (cloud2, "current frame");
     int clusterId = 0;
     for(vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>::iterator it = clusters.begin(); it != clusters.end(); it++) {
-
-
-
         pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZ> randomColor (*it);
         viewer.addPointCloud<pcl::PointXYZ> (*it, randomColor, "cluster" + clusterId);
 
@@ -148,16 +147,21 @@ void findObjectsAndClassify() {
         textId << "cluster-id: " << clusterId;
 
         viewer.addText3D(textId.str(), textPosition, 0.015f, 1, 0, 1, textId.str(), 0);
-        cout << "#" << textId.str() << endl;
+        cout << "\n@" << textId.str() << endl;
 
         vector<string>::iterator namesIt;
         vector<float>::iterator confIt;
         for(namesIt = classes[clusterId].names.begin(), confIt = classes[clusterId].confidence.begin(); namesIt != classes[clusterId].names.end(); namesIt++, confIt++) {
-            cout << "##" << *namesIt << "[" << *confIt << "]" << endl;
+            cout << "- " << *namesIt << " [" << *confIt << "]" << endl;
         }
 
         clusterId++;
     }
 
     keyboardCbLock = false;
+    printInstructions();
+}
+
+void printInstructions() {
+    cout << "\n\nInstructions:\nPress spacebar in the active viewer and follow instructions in console to load pcd files." << endl;
 }

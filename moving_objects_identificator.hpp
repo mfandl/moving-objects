@@ -29,6 +29,7 @@ private:
     int minClusterSize;
     bool enableSceneAlignment;
     int ICPMaxIterations;
+    bool verbose;
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr inputCloud1;
     pcl::PointCloud<pcl::PointXYZ>::Ptr inputCloud2;
@@ -66,6 +67,7 @@ public:
     void setEnableSceneAlignment(bool enable);
     int getICPMaxIterations();
     void setICPMaxIterations(int iterations);
+    void setVerbose(bool verbose);
 };
 
 #endif
